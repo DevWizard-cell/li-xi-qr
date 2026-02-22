@@ -9,82 +9,110 @@
 body{
     margin:0;
     padding:0;
-    background:linear-gradient(135deg,#b30000,#ff1a1a);
+    background:linear-gradient(135deg,#a80000,#ff1a1a);
+    height:100vh;
+    overflow:hidden;
     display:flex;
-    flex-direction:column;
     justify-content:center;
     align-items:center;
-    height:100vh;
-    font-family:Arial, sans-serif;
-    text-align:center;
+    flex-direction:column;
+    font-family:Arial;
     color:white;
-    overflow:hidden;
+    text-align:center;
+}
+
+.container{
+    perspective:1000px;
 }
 
 .envelope{
-    width:220px;
+    width:240px;
     cursor:pointer;
-    animation: float 1.2s infinite alternate ease-in-out;
-    transition: transform 0.3s;
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform 1s;
 }
 
-.envelope:hover{
-    transform:scale(1.1);
+.flap{
+    position:absolute;
+    width:100%;
+    height:100%;
+    top:0;
+    left:0;
+    transform-origin:top;
+    transition:transform 1s;
 }
 
-@keyframes float{
-    from{ transform:translateY(0px);}
-    to{ transform:translateY(-15px);}
+.open .flap{
+    transform:rotateX(-160deg);
 }
 
 .instruction{
     margin-top:20px;
-    font-size:18px;
     font-weight:bold;
 }
 
 .wish-box{
     margin-top:30px;
     padding:20px;
-    max-width:300px;
+    max-width:320px;
     background:rgba(255,255,255,0.2);
     border-radius:15px;
     display:none;
-    animation:fadeIn 0.8s forwards;
 }
 
-@keyframes fadeIn{
-    from{opacity:0; transform:scale(0.8);}
-    to{opacity:1; transform:scale(1);}
+.money{
+    position:absolute;
+    top:-50px;
+    font-size:24px;
+    animation:fall linear forwards;
 }
 
-button{
-    margin-top:20px;
-    padding:8px 15px;
-    border:none;
-    border-radius:8px;
-    background:white;
-    color:red;
-    font-weight:bold;
-    cursor:pointer;
+@keyframes fall{
+    to{
+        transform:translateY(110vh) rotate(360deg);
+        opacity:0;
+    }
+}
+
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    pointer-events:none;
 }
 </style>
 </head>
 <body>
 
-<img id="envelope" class="envelope" src="" alt="Lì xì">
+<canvas id="firework"></canvas>
 
-<div class="instruction">🎁 Nhấn vào lì xì để nhận lời chúc của riêng bạn</div>
+<div class="container">
+    <div id="envelope" class="envelope">
+        <img id="imgFront" src="" width="240">
+        <div class="flap">
+            <img id="imgBack" src="" width="240">
+        </div>
+    </div>
+</div>
 
+<div class="instruction">🧧 Nhấn vào lì xì để mở</div>
 <div id="wishBox" class="wish-box"></div>
 
-<button onclick="location.reload()">Nhận lì xì khác</button>
+<audio id="tingSound" src="sound/bell ring.mp3"></audio>
 
 <script>
 
-// ===============================
-// 🎯 DANH SÁCH 9 ẢNH LÌ XÌ
-// ===============================
+// =============================
+// CHỐNG NHẬN NHIỀU LẦN
+// =============================
+if(localStorage.getItem("received")){
+    document.body.innerHTML = "<h2>Bạn đã nhận lì xì rồi 🎉</h2>";
+}
+
+// =============================
+// DANH SÁCH ẢNH
+// =============================
 const images = [
     "images/Phong Bao Lì Xì Ảnh 1 Đỏ Nay.pdf",
     "images/Phong Bao Lì Xì Ảnh 2 Cam Hồng Nay Nay.pdf",
@@ -97,47 +125,82 @@ const images = [
     "images/Phong Bao Lì Xì Ảnh 9 Tím.pdf"
 ];
 
-// ===============================
-// 🎯 DANH SÁCH LỜI CHÚC
-// 👉 Bạn chỉ cần thêm câu vào đây
-// ===============================
+// =============================
+// DANH SÁCH LỜI CHÚC (THÊM TẠI ĐÂY)
+// =============================
 const wishes = [
-    "Chúc bạn một năm mới tràn đầy may mắn và thành công!",
-    "Chúc bạn sức khỏe dồi dào, tiền vô như nước!",
-    "Chúc bạn đạt được mọi mục tiêu trong năm nay!",
-    "Chúc bạn luôn giữ nụ cười trên môi!",
-    "Chúc bạn học giỏi, thi đâu đậu đó!",
-    "Chúc bạn hạnh phúc và bình an suốt năm!",
-    "Chúc bạn tình duyên nở rộ!",
-    "Chúc bạn gặp nhiều cơ hội lớn!",
-    "Chúc bạn luôn được yêu thương!"
+"Chúc bạn một năm bùng nổ thành công!",
+"Chúc bạn tiền vô ào ào như thác lũ!",
+"Chúc bạn thi đâu đậu đó!",
+"Chúc bạn yêu đời, yêu người, yêu bản thân!",
+"Chúc bạn hạnh phúc mỗi ngày!",
+"Chúc bạn đạt được ước mơ lớn nhất!",
+"Chúc bạn năm mới nhiều cơ hội!",
+"Chúc bạn may mắn nhân đôi!",
+"Chúc bạn luôn tỏa sáng!"
 ];
 
-// ===============================
-// 🔥 HIỂN THỊ NGẪU NHIÊN 1 ẢNH
-// ===============================
+// Random ảnh
 const randomImage = images[Math.floor(Math.random()*images.length)];
-document.getElementById("envelope").src = randomImage;
+document.getElementById("imgFront").src = randomImage;
+document.getElementById("imgBack").src = randomImage;
 
-// ===============================
-// 🎁 KHI NHẤN VÀO LÌ XÌ
-// ===============================
+// =============================
+// MỞ LÌ XÌ
+// =============================
 document.getElementById("envelope").addEventListener("click", function(){
 
-    // Tắt animation
-    this.style.animation = "none";
+    this.classList.add("open");
 
-    // Hiệu ứng mở
-    this.style.transform = "scale(1.2) rotate(10deg)";
-    
-    // Random lời chúc
+    document.getElementById("tingSound").play();
+
     const randomWish = wishes[Math.floor(Math.random()*wishes.length)];
-
-    // Hiển thị lời chúc
     const wishBox = document.getElementById("wishBox");
     wishBox.style.display = "block";
     wishBox.innerHTML = randomWish;
+
+    rainMoney();
+    launchFireworks();
+
+    localStorage.setItem("received","yes");
 });
+
+// =============================
+// TIỀN RƠI
+// =============================
+function rainMoney(){
+    for(let i=0;i<30;i++){
+        let money=document.createElement("div");
+        money.className="money";
+        money.innerHTML="💰";
+        money.style.left=Math.random()*100+"vw";
+        money.style.animationDuration=(Math.random()*2+2)+"s";
+        document.body.appendChild(money);
+        setTimeout(()=>money.remove(),4000);
+    }
+}
+
+// =============================
+// PHÁO HOA
+// =============================
+const canvas=document.getElementById("firework");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+function launchFireworks(){
+    for(let i=0;i<100;i++){
+        ctx.fillStyle="hsl("+Math.random()*360+",100%,50%)";
+        ctx.beginPath();
+        ctx.arc(
+            Math.random()*canvas.width,
+            Math.random()*canvas.height,
+            3,0,Math.PI*2
+        );
+        ctx.fill();
+    }
+    setTimeout(()=>ctx.clearRect(0,0,canvas.width,canvas.height),800);
+}
 
 </script>
 
