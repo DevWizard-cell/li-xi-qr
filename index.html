@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lì Xì May Mắn</title>
+
+<style>
+body{
+    margin:0;
+    padding:0;
+    background:linear-gradient(135deg,#b30000,#ff1a1a);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    font-family:Arial, sans-serif;
+    text-align:center;
+    color:white;
+    overflow:hidden;
+}
+
+.envelope{
+    width:220px;
+    cursor:pointer;
+    animation: float 1.2s infinite alternate ease-in-out;
+    transition: transform 0.3s;
+}
+
+.envelope:hover{
+    transform:scale(1.1);
+}
+
+@keyframes float{
+    from{ transform:translateY(0px);}
+    to{ transform:translateY(-15px);}
+}
+
+.instruction{
+    margin-top:20px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.wish-box{
+    margin-top:30px;
+    padding:20px;
+    max-width:300px;
+    background:rgba(255,255,255,0.2);
+    border-radius:15px;
+    display:none;
+    animation:fadeIn 0.8s forwards;
+}
+
+@keyframes fadeIn{
+    from{opacity:0; transform:scale(0.8);}
+    to{opacity:1; transform:scale(1);}
+}
+
+button{
+    margin-top:20px;
+    padding:8px 15px;
+    border:none;
+    border-radius:8px;
+    background:white;
+    color:red;
+    font-weight:bold;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<img id="envelope" class="envelope" src="" alt="Lì xì">
+
+<div class="instruction">🎁 Nhấn vào lì xì để nhận lời chúc của riêng bạn</div>
+
+<div id="wishBox" class="wish-box"></div>
+
+<button onclick="location.reload()">Nhận lì xì khác</button>
+
+<script>
+
+// ===============================
+// 🎯 DANH SÁCH 9 ẢNH LÌ XÌ
+// ===============================
+const images = [
+    "images/Phong Bao Lì Xì Ảnh 1 Đỏ Nay.pdf",
+    "images/Phong Bao Lì Xì Ảnh 2 Cam Hồng Nay Nay.pdf",
+    "images/Phong Bao Lì Xì Ảnh 3 Xanh Biển Đậm.pdf",
+    "images/Phong Bao Lì Xì Ảnh 4 Đỏ Xưa.pdf",
+    "images/Phong Bao Lì Xì Ảnh 5 Vàng.pdf",
+    "images/Phong Bao Lì Xì Ảnh 6 Đen.pdf",
+    "images/Phong Bao Lì Xì Ảnh 7 Trắng.pdf",
+    "images/Phong Bao Lì Xì Ảnh 8 Hồng.pdf",
+    "images/Phong Bao Lì Xì Ảnh 9 Tím.pdf"
+];
+
+// ===============================
+// 🎯 DANH SÁCH LỜI CHÚC
+// 👉 Bạn chỉ cần thêm câu vào đây
+// ===============================
+const wishes = [
+    "Chúc bạn một năm mới tràn đầy may mắn và thành công!",
+    "Chúc bạn sức khỏe dồi dào, tiền vô như nước!",
+    "Chúc bạn đạt được mọi mục tiêu trong năm nay!",
+    "Chúc bạn luôn giữ nụ cười trên môi!",
+    "Chúc bạn học giỏi, thi đâu đậu đó!",
+    "Chúc bạn hạnh phúc và bình an suốt năm!",
+    "Chúc bạn tình duyên nở rộ!",
+    "Chúc bạn gặp nhiều cơ hội lớn!",
+    "Chúc bạn luôn được yêu thương!"
+];
+
+// ===============================
+// 🔥 HIỂN THỊ NGẪU NHIÊN 1 ẢNH
+// ===============================
+const randomImage = images[Math.floor(Math.random()*images.length)];
+document.getElementById("envelope").src = randomImage;
+
+// ===============================
+// 🎁 KHI NHẤN VÀO LÌ XÌ
+// ===============================
+document.getElementById("envelope").addEventListener("click", function(){
+
+    // Tắt animation
+    this.style.animation = "none";
+
+    // Hiệu ứng mở
+    this.style.transform = "scale(1.2) rotate(10deg)";
+    
+    // Random lời chúc
+    const randomWish = wishes[Math.floor(Math.random()*wishes.length)];
+
+    // Hiển thị lời chúc
+    const wishBox = document.getElementById("wishBox");
+    wishBox.style.display = "block";
+    wishBox.innerHTML = randomWish;
+});
+
+</script>
+
+</body>
+</html>
