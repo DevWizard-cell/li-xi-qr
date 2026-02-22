@@ -6,253 +6,385 @@
 <title>Lì Xì 2027</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+*{margin:0;padding:0;box-sizing:border-box;}
+
 body{
-    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-    background:radial-gradient(circle at top,#ff2a2a,#8b0000);
-    min-height:100vh;
-    overflow:hidden;
-    color:white;
+font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+background:radial-gradient(circle at top,#ff2a2a,#8b0000);
+color:white;
+min-height:100vh;
+overflow:auto;
 }
 
-/* ===== GRID 9 LÌ XÌ ===== */
-.grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-    padding:20px;
-    max-width:500px;
-    margin:auto;
+/* SCREEN */
+.screen{
+position:fixed;
+inset:0;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center;
+padding:20px;
 }
+
+input{
+padding:12px;
+border-radius:20px;
+border:none;
+width:80%;
+max-width:300px;
+margin-top:15px;
+text-align:center;
+font-size:16px;
+}
+
+button{
+padding:10px 20px;
+border:none;
+border-radius:20px;
+margin:10px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.primary{background:gold;color:black;}
+.secondary{background:white;color:black;}
+.hidden{display:none}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+padding:20px;
+max-width:500px;
+margin:auto;
+max-height:75vh;
+overflow-y:auto;
+}
+
+.item{text-align:center;}
 
 .lixi{
-    width:100%;
-    border-radius:15px;
-    cursor:pointer;
-    animation:float 1.5s infinite alternate ease-in-out;
-    transition:transform 0.3s;
+width:100%;
+border-radius:16px;
+cursor:pointer;
+transition:0.3s;
+box-shadow:0 4px 10px rgba(0,0,0,0.4);
+}
+.lixi:hover{transform:scale(1.08);}
+
+.percent{
+font-size:13px;
+margin-top:6px;
+opacity:0.9;
 }
 
-.lixi:hover{
-    transform:scale(1.08);
-}
-
-@keyframes float{
-    from{transform:translateY(0px);}
-    to{transform:translateY(-8px);}
-}
-
-/* ===== MODAL OPEN ===== */
+/* OVERLAY */
 .overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.6);
-    backdrop-filter:blur(5px);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    visibility:hidden;
-    opacity:0;
-    transition:0.4s;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.75);
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+visibility:hidden;
+opacity:0;
+transition:0.4s;
 }
 
 .overlay.show{
-    visibility:visible;
-    opacity:1;
+visibility:visible;
+opacity:1;
 }
 
-.envelope{
-    width:75vw;
-    max-width:280px;
-    position:relative;
-    perspective:1000px;
+.preview{
+background:rgba(255,255,255,0.1);
+padding:25px;
+border-radius:25px;
+text-align:center;
+max-width:320px;
+backdrop-filter:blur(10px);
 }
 
-.front{
-    width:100%;
-    border-radius:18px;
-    box-shadow:0 20px 40px rgba(0,0,0,0.5);
+.preview img{
+width:180px;
+border-radius:15px;
+margin-bottom:12px;
 }
 
-.flap{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    transform-origin:top;
-    transition:1s;
-    border-radius:18px;
+.notice{
+margin-top:10px;
+font-size:14px;
+opacity:0.85;
 }
 
-.open .flap{
-    transform:rotateX(-170deg);
-}
-
-.letter{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,100%);
-    width:85%;
-    background:rgba(255,255,255,0.15);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-    padding:20px;
-    text-align:center;
-    opacity:0;
-    transition:1s;
-}
-
-.show-letter{
-    transform:translate(-50%,-50%);
-    opacity:1;
-}
-
+/* FIREWORK */
 canvas{
-    position:fixed;
-    top:0;
-    left:0;
-    pointer-events:none;
+position:fixed;
+top:0;
+left:0;
+pointer-events:none;
 }
 </style>
 </head>
 <body>
 
-<h3 style="text-align:center;margin-top:20px;">🧧 Chọn một lì xì bạn thích</h3>
+<!-- NHẬP TÊN -->
+<div class="screen" id="nameScreen">
+<h2>🎉 Nhập tên của bạn</h2>
+<input id="username" placeholder="Nhập tên tại đây">
+<button class="primary" onclick="start()">Bắt đầu</button>
+</div>
 
+<!-- CHỌN LÌ XÌ -->
+<div id="chooseScreen" class="hidden">
+<h3 style="text-align:center;margin-top:15px;">🧧 Chọn một lì xì bạn thích</h3>
 <div class="grid" id="grid"></div>
+</div>
 
-<div class="overlay" id="overlay">
-    <div class="envelope" id="envelope">
-        <img id="frontImg" class="front">
-        <img id="flapImg" class="flap">
-        <div id="letter" class="letter"></div>
-    </div>
+<!-- PREVIEW -->
+<div class="overlay" id="overlay" onclick="closeOverlay(event)">
+<div class="preview" onclick="event.stopPropagation()">
+<img id="previewImg">
+<h3 id="themeTitle"></h3>
+<p id="finalWish"></p>
+<div id="actionArea"></div>
+</div>
 </div>
 
 <canvas id="firework"></canvas>
-<audio id="sound" src="sound/bell ring.mp3"></audio>
 
 <script>
 
-// ===== CHỐNG NHẬN LẠI =====
-if(localStorage.getItem("lixiChoice")){
-    document.body.innerHTML="<h2 style='text-align:center;margin-top:40px;'>Bạn đã nhận lì xì rồi 🎉</h2>";
+/* ===== NHẠC ===== */
+const bgMusic=new Audio("music/tet.mp3");
+bgMusic.loop=true;
+bgMusic.volume=0;
+let musicOn=false;
+let fadeInterval=null;
+
+const musicBtn=document.createElement("button");
+musicBtn.innerHTML="🔊";
+musicBtn.style.position="fixed";
+musicBtn.style.top="15px";
+musicBtn.style.right="15px";
+musicBtn.style.zIndex="9999";
+musicBtn.style.borderRadius="50%";
+musicBtn.style.width="45px";
+musicBtn.style.height="45px";
+musicBtn.style.border="none";
+musicBtn.style.fontSize="18px";
+musicBtn.style.cursor="pointer";
+musicBtn.style.background="gold";
+musicBtn.style.color="black";
+document.body.appendChild(musicBtn);
+
+musicBtn.onclick=toggleMusic;
+
+function toggleMusic(){
+if(!musicOn){
+bgMusic.play();
+fadeInMusic();
+musicBtn.innerHTML="🔇";
+musicOn=true;
+}else{
+bgMusic.pause();
+musicBtn.innerHTML="🔊";
+musicOn=false;
+}
 }
 
-// ===== DANH SÁCH ẢNH =====
-const images=[
-"images/Phong Bao Lì Xì Ảnh 1 Đỏ Nay.png",
-    "images/Phong Bao Lì Xì Ảnh 2 Cam Hồng Nay Nay.png",
-    "images/Phong Bao Lì Xì Ảnh 3 Xanh Biển Đậm.png",
-    "images/Phong Bao Lì Xì Ảnh 4 Đỏ Xưa.png",
-    "images/Phong Bao Lì Xì Ảnh 5 Vàng Xưa.png",
-    "images/Phong Bao Lì Xì Ảnh 6 Lam Xưa.png",
-    "images/Phong Bao Lì Xì Ảnh 7 Tết Rộn Ràng.png",
-    "images/Phong Bao Lì Xì Ảnh 8 Gen Z.png",
-    "images/Phong Bao Lì Xì Ảnh 9 Thư Pháp.png"
-];
+function fadeInMusic(){
+bgMusic.volume=0;
+let step=0;
+clearInterval(fadeInterval);
+fadeInterval=setInterval(()=>{
+step+=0.05;
+if(step>=1){
+bgMusic.volume=1;
+clearInterval(fadeInterval);
+}else{
+bgMusic.volume=step;
+}
+},100);
+}
 
-// ===== LỜI CHÚC (THÊM Ở ĐÂY) =====
-const wishes=[
-"2027 bạn sẽ bứt phá giới hạn!",
-"Tiền vô ào ào!",
-"Thi đâu đậu đó!",
-"May mắn suốt năm!",
-"Yêu thương trọn vẹn!",
-"Thành công rực rỡ!",
-"Cơ hội lớn đang chờ bạn!",
-"Bạn sẽ làm nên điều phi thường!",
-"Mọi điều tốt đẹp sẽ đến!"
-];
-
-// ===== TẠO GRID =====
-const grid=document.getElementById("grid");
-
-images.forEach(src=>{
-    const img=document.createElement("img");
-    img.src=src;
-    img.className="lixi";
-    img.onclick=()=>openEnvelope(src);
-    grid.appendChild(img);
+document.addEventListener("visibilitychange",()=>{
+if(document.hidden){
+bgMusic.pause();
+}else{
+if(musicOn) bgMusic.play();
+}
 });
 
-// ===== MỞ =====
-function openEnvelope(src){
-    document.getElementById("overlay").classList.add("show");
-    document.getElementById("frontImg").src=src;
-    document.getElementById("flapImg").src=src;
+/* ===== DATA ===== */
+const images=[
+"images/Phong Bao Lì Xì Ảnh 1 Đỏ Nay.png",
+"images/Phong Bao Lì Xì Ảnh 2 Cam Hồng Nay Nay.png",
+"images/Phong Bao Lì Xì Ảnh 3 Xanh Biển Đậm.png",
+"images/Phong Bao Lì Xì Ảnh 4 Đỏ Xưa.png",
+"images/Phong Bao Lì Xì Ảnh 5 Vàng Xưa.png",
+"images/Phong Bao Lì Xì Ảnh 6 Lam Xưa.png",
+"images/Phong Bao Lì Xì Ảnh 7 Tết Rộn Ràng.png",
+"images/Phong Bao Lì Xì Ảnh 8 Gen Z.png",
+"images/Phong Bao Lì Xì Ảnh 9 Thư Pháp.png"
+];
 
-    setTimeout(()=>{
-        document.getElementById("envelope").classList.add("open");
-        document.getElementById("sound").play();
+const themes=[
+"💰 Chủ đề Tài Lộc","🔥 Chủ đề Bứt Phá","🌊 Chủ đề Thành Công",
+"🏮 Chủ đề Truyền Thống","✨ Chủ đề Vàng Son","🧠 Chủ đề Nội Lực",
+"🎊 Chủ đề Rộn Ràng","🚀 Chủ đề Gen Z","📜 Chủ đề Thư Pháp"
+];
 
-        const wish=wishes[Math.floor(Math.random()*wishes.length)];
-        const letter=document.getElementById("letter");
-        letter.innerHTML=wish;
-        letter.classList.add("show-letter");
+const wishes=[
+["2027 bạn sẽ bứt phá mọi giới hạn!","Tên bạn sẽ tỏa sáng!"],
+["Tiền vào như nước!","Tài lộc song hành!"],
+["Khám phá thành công mới!","Đi xa hơn bạn nghĩ!"],
+["Giữ gốc – vươn cao!","Vững vàng thành công!"],
+["Rực rỡ như ánh vàng!","Thịnh vượng cả năm!"],
+["Bản lĩnh vững vàng!","Sức mạnh nội tâm lớn dần!"],
+["Niềm vui lan tỏa!","Tết đầy năng lượng!"],
+["Dẫn đầu xu hướng!","Khác biệt tạo thành công!"],
+["Phúc – Lộc – Thọ hội tụ!","An khang trọn năm!"]
+];
 
-        rainMoney();
-        fireworks();
+let counts=JSON.parse(localStorage.getItem("lixiCounts"))||Array(9).fill(0);
+let selectedIndex=null;
+let userName="";
+let claimed=false;
 
-        localStorage.setItem("lixiChoice","done");
-    },400);
+/* START */
+function start(){
+const name=document.getElementById("username").value.trim();
+if(!name) return alert("Vui lòng nhập tên");
+userName=name;
+document.getElementById("nameScreen").classList.add("hidden");
+document.getElementById("chooseScreen").classList.remove("hidden");
+renderGrid();
 }
 
-// ===== MONEY =====
-function rainMoney(){
-    for(let i=0;i<40;i++){
-        let m=document.createElement("div");
-        m.innerHTML="💰";
-        m.style.position="fixed";
-        m.style.left=Math.random()*100+"vw";
-        m.style.top="-20px";
-        m.style.fontSize="22px";
-        m.style.animation="fall "+(Math.random()*2+3)+"s linear forwards";
-        document.body.appendChild(m);
-        setTimeout(()=>m.remove(),5000);
-    }
+/* GRID */
+function renderGrid(){
+const grid=document.getElementById("grid");
+grid.innerHTML="";
+let total=counts.reduce((a,b)=>a+b,0);
+
+images.forEach((src,index)=>{
+const div=document.createElement("div");
+div.className="item";
+
+const img=document.createElement("img");
+img.src=src;
+img.className="lixi";
+img.onclick=()=>preview(index);
+
+const percent=document.createElement("div");
+percent.className="percent";
+let p=total?((counts[index]/total)*100).toFixed(1):0;
+percent.innerText=p+"% chọn";
+
+div.appendChild(img);
+div.appendChild(percent);
+grid.appendChild(div);
+});
 }
 
-const style=document.createElement("style");
-style.innerHTML="@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}";
-document.head.appendChild(style);
+/* PREVIEW */
+function preview(index){
+selectedIndex=index;
+document.getElementById("overlay").classList.add("show");
+document.getElementById("previewImg").src=images[index];
+document.getElementById("themeTitle").innerText=themes[index];
+document.getElementById("finalWish").innerText="";
 
-// ===== FIREWORK =====
+if(claimed){
+document.getElementById("actionArea").innerHTML=
+`<div class="notice">Bạn đã nhận lì xì rồi</div>`;
+}else{
+document.getElementById("actionArea").innerHTML=
+`<button class="primary" onclick="keepLixi()">Giữ lì xì</button>
+<button class="secondary" onclick="changeLixi()">Đổi lì xì</button>`;
+}
+}
+
+/* GIỮ */
+function keepLixi(){
+if(claimed) return;
+
+const wish=wishes[selectedIndex][Math.floor(Math.random()*2)];
+document.getElementById("finalWish").innerText=userName+", "+wish;
+
+counts[selectedIndex]++;
+localStorage.setItem("lixiCounts",JSON.stringify(counts));
+
+claimed=true;
+document.getElementById("actionArea").innerHTML=
+`<div class="notice">Bạn đã nhận lì xì rồi</div>`;
+
+launchFirework();
+renderGrid();
+}
+
+/* ĐỔI */
+function changeLixi(){
+document.getElementById("overlay").classList.remove("show");
+}
+
+/* CLOSE */
+function closeOverlay(e){
+if(e.target.id==="overlay"){
+document.getElementById("overlay").classList.remove("show");
+}
+}
+
+/* FIREWORK */
 const canvas=document.getElementById("firework");
 const ctx=canvas.getContext("2d");
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
-function fireworks(){
-    let particles=[];
-    for(let i=0;i<80;i++){
-        particles.push({
-            x:canvas.width/2,
-            y:canvas.height/2,
-            angle:Math.random()*Math.PI*2,
-            speed:Math.random()*4+2
-        });
-    }
+function launchFirework(){
 
-    let frame=0;
-    function animate(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        particles.forEach(p=>{
-            p.x+=Math.cos(p.angle)*p.speed;
-            p.y+=Math.sin(p.angle)*p.speed;
-            ctx.fillStyle="hsl("+Math.random()*360+",100%,60%)";
-            ctx.beginPath();
-            ctx.arc(p.x,p.y,2,0,Math.PI*2);
-            ctx.fill();
-        });
-        frame++;
-        if(frame<40) requestAnimationFrame(animate);
-    }
-    animate();
+if(musicOn){
+bgMusic.volume=0.3;
+setTimeout(()=>{bgMusic.volume=1;},1500);
+}
+
+let particles=[];
+for(let i=0;i<100;i++){
+particles.push({
+x:Math.random()*canvas.width,
+y:canvas.height,
+angle:-Math.PI/2+(Math.random()-0.5),
+speed:Math.random()*6+3,
+life:60
+});
+}
+
+function animate(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+particles.forEach(p=>{
+p.x+=Math.cos(p.angle)*p.speed;
+p.y+=Math.sin(p.angle)*p.speed;
+p.life--;
+ctx.fillStyle="hsl("+Math.random()*360+",100%,60%)";
+ctx.beginPath();
+ctx.arc(p.x,p.y,3,0,Math.PI*2);
+ctx.fill();
+});
+particles=particles.filter(p=>p.life>0);
+if(particles.length>0){
+requestAnimationFrame(animate);
+}else{
+ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+}
+animate();
 }
 
 </script>
-
 </body>
 </html>
