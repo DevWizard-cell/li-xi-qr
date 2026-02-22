@@ -7,7 +7,6 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-
 body{
 font-family:-apple-system,BlinkMacSystemFont,sans-serif;
 background:radial-gradient(circle at top,#ff2a2a,#8b0000);
@@ -65,7 +64,6 @@ overflow-y:auto;
 }
 
 .item{text-align:center;}
-
 .lixi{
 width:100%;
 border-radius:16px;
@@ -75,30 +73,20 @@ box-shadow:0 4px 10px rgba(0,0,0,0.4);
 }
 .lixi:hover{transform:scale(1.08);}
 
-.percent{
-font-size:13px;
-margin-top:6px;
-opacity:0.9;
-}
-
 /* OVERLAY */
 .overlay{
 position:fixed;
 inset:0;
-background:rgba(0,0,0,0.75);
+background:rgba(0,0,0,0.8);
 display:flex;
 justify-content:center;
 align-items:center;
 flex-direction:column;
 visibility:hidden;
 opacity:0;
-transition:0.4s;
+transition:0.3s;
 }
-
-.overlay.show{
-visibility:visible;
-opacity:1;
-}
+.overlay.show{visibility:visible;opacity:1;}
 
 .preview{
 background:rgba(255,255,255,0.1);
@@ -121,31 +109,43 @@ font-size:14px;
 opacity:0.85;
 }
 
-/* FIREWORK */
 canvas{
 position:fixed;
 top:0;
 left:0;
 pointer-events:none;
 }
+
+/* VIEW MODE */
+#viewMode img{
+position:absolute;
+cursor:grab;
+max-width:none;
+}
+.view-btn{
+position:fixed;
+right:20px;
+background:gold;
+border:none;
+padding:8px 12px;
+border-radius:10px;
+font-weight:bold;
+}
 </style>
 </head>
 <body>
 
-<!-- NHẬP TÊN -->
 <div class="screen" id="nameScreen">
 <h2>🎉 Nhập tên của bạn</h2>
 <input id="username" placeholder="Nhập tên tại đây">
 <button class="primary" onclick="start()">Bắt đầu</button>
 </div>
 
-<!-- CHỌN LÌ XÌ -->
 <div id="chooseScreen" class="hidden">
 <h3 style="text-align:center;margin-top:15px;">🧧 Chọn một lì xì bạn thích</h3>
 <div class="grid" id="grid"></div>
 </div>
 
-<!-- PREVIEW -->
 <div class="overlay" id="overlay" onclick="closeOverlay(event)">
 <div class="preview" onclick="event.stopPropagation()">
 <img id="previewImg">
@@ -155,11 +155,26 @@ pointer-events:none;
 </div>
 </div>
 
+<div class="overlay" id="downloadConfirm">
+<div class="preview">
+<h3>Bạn có chắc muốn tải lì xì này?</h3>
+<button class="primary" onclick="confirmDownload()">Có</button>
+<button class="secondary" onclick="closeDownload()">Không</button>
+</div>
+</div>
+
+<div class="overlay" id="viewMode">
+<img id="viewImg">
+<button class="view-btn" style="top:40%;" onclick="zoomIn()">+</button>
+<button class="view-btn" style="top:50%;" onclick="zoomOut()">-</button>
+<button style="position:fixed;top:15px;right:15px;background:red;color:white;border:none;padding:8px 12px;border-radius:10px;" onclick="closeView()">X</button>
+</div>
+
 <canvas id="firework"></canvas>
 
 <script>
 
-/* ===== NHẠC ===== */
+/* ===== NHẠC NỀN ===== */
 const bgMusic=new Audio("music/tet.mp3");
 bgMusic.loop=true;
 bgMusic.volume=0;
@@ -167,14 +182,14 @@ let musicOn=false;
 let fadeInterval=null;
 
 const musicBtn=document.createElement("button");
-musicBtn.innerHTML="🔊";
+musicBtn.innerHTML="🔊 Bật nhạc";
 musicBtn.style.position="fixed";
 musicBtn.style.top="15px";
-musicBtn.style.right="15px";
+musicBtn.style.left="15px";
 musicBtn.style.zIndex="9999";
 musicBtn.style.borderRadius="50%";
-musicBtn.style.width="45px";
-musicBtn.style.height="45px";
+musicBtn.style.width="100px";
+musicBtn.style.height="60px";
 musicBtn.style.border="none";
 musicBtn.style.fontSize="18px";
 musicBtn.style.cursor="pointer";
@@ -188,11 +203,11 @@ function toggleMusic(){
 if(!musicOn){
 bgMusic.play();
 fadeInMusic();
-musicBtn.innerHTML="🔇";
+musicBtn.innerHTML="🔇 Tắt nhạc";
 musicOn=true;
 }else{
 bgMusic.pause();
-musicBtn.innerHTML="🔊";
+musicBtn.innerHTML="🔊 Bật nhạc";
 musicOn=false;
 }
 }
@@ -220,7 +235,14 @@ if(musicOn) bgMusic.play();
 }
 });
 
-/* ===== DATA ===== */
+/* 🔔 BELL */
+const bellSound=new Audio("audio/bell ring.mp3");
+function playBell(){
+bellSound.currentTime=0;
+bellSound.play();
+}
+
+/* DATA */
 const images=[
 "images/Phong Bao Lì Xì Ảnh 1 Đỏ Nay.png",
 "images/Phong Bao Lì Xì Ảnh 2 Cam Hồng Nay Nay.png",
@@ -240,23 +262,102 @@ const themes=[
 ];
 
 const wishes=[
-["2027 bạn sẽ bứt phá mọi giới hạn!","Tên bạn sẽ tỏa sáng!"],
-["Tiền vào như nước!","Tài lộc song hành!"],
-["Khám phá thành công mới!","Đi xa hơn bạn nghĩ!"],
-["Giữ gốc – vươn cao!","Vững vàng thành công!"],
-["Rực rỡ như ánh vàng!","Thịnh vượng cả năm!"],
-["Bản lĩnh vững vàng!","Sức mạnh nội tâm lớn dần!"],
-["Niềm vui lan tỏa!","Tết đầy năng lượng!"],
-["Dẫn đầu xu hướng!","Khác biệt tạo thành công!"],
-["Phúc – Lộc – Thọ hội tụ!","An khang trọn năm!"]
+[
+  "Năm mới rực rỡ như sắc đỏ, tiền vô như nước.",
+  "Chúc bạn cả năm may mắn đỏ thắm, làm đâu thắng đó.",
+  "Tết này đỏ vận, cả năm phát tài phát lộc.",
+  "An khang thịnh vượng, vạn sự hanh thông.",
+  "Xuân sang phú quý, lộc lá đầy nhà.",
+  "Đỏ tình đỏ tiền, đỏ luôn cả sự nghiệp.",
+  "Gia đình ấm êm, công việc thuận lợi.",
+  "Một năm bứt phá, thành công rực rỡ."
+],
+[
+  "Năm mới ngọt ngào như sắc cam hồng, tình tiền đủ đầy.",
+  "Chúc bạn yêu đời, yêu người, yêu luôn ví tiền.",
+  "Tết đến hạnh phúc lan tỏa khắp nơi.",
+  "Sự nghiệp thăng hoa, tài lộc nở rộ.",
+  "Gia đình sum vầy, niềm vui tròn đầy.",
+  "Mỗi ngày đều là một ngày may mắn.",
+  "Thành công nối tiếp thành công.",
+  "Cười tươi cả năm, phát tài cả tháng."
+],
+[
+  "Chúc năm mới bình an sâu lắng như biển cả.",
+  "Tài lộc dồi dào, sự nghiệp vững vàng.",
+  "Vượt sóng thành công, cập bến vinh quang.",
+  "Gia đạo an nhiên, tâm hồn thư thái.",
+  "Làm ăn thuận buồm xuôi gió.",
+  "Mọi dự định đều thành hiện thực.",
+  "Bản lĩnh mạnh mẽ, vươn xa bốn phương.",
+  "Một năm ổn định và đầy bứt phá."
+],
+[
+  "Xuân về mang lộc cổ truyền, phúc đức đầy nhà.",
+  "Chúc gia đình hòa thuận, ấm êm trọn năm.",
+  "Phú quý song toàn, an khang thịnh đạt.",
+  "Tài lộc tấn tới, vạn sự như ý.",
+  "Kính chúc sức khỏe dồi dào, tinh thần minh mẫn.",
+  "Con cháu hiếu thuận, gia đạo yên vui.",
+  "Làm ăn phát đạt, tiền vô như nước.",
+  "Xuân an vui, Tết đậm tình thân."
+],
+[
+  "Năm mới vàng son, phú quý đầy tay.",
+  "Tài lộc sáng rực như sắc vàng đầu xuân.",
+  "Chúc bạn công danh rạng rỡ.",
+  "Gia đình sung túc, đủ đầy quanh năm.",
+  "May mắn gõ cửa, thành công chờ sẵn.",
+  "Sự nghiệp thăng tiến không ngừng.",
+  "Tiền vào như nước, tiền ra nhỏ giọt.",
+  "Một năm phát tài phát lộc."
+],
+[
+  "Chúc năm mới bình an và sâu sắc.",
+  "Tâm an vạn sự an.",
+  "Sự nghiệp vững bền như trời xanh.",
+  "Gia đình hòa hợp, hạnh phúc dài lâu.",
+  "Khởi đầu thuận lợi, kết thúc viên mãn.",
+  "May mắn bền lâu, thành công chắc chắn.",
+  "Sức khỏe dồi dào, tinh thần minh mẫn.",
+  "Một năm an nhiên, đủ đầy."
+],
+[
+  "Tết rộn ràng, lộc đến ngập tràn.",
+  "Năm mới tưng bừng, tiền vô ào ào.",
+  "Cả năm cười tươi như pháo hoa.",
+  "Gia đình sum họp, hạnh phúc nhân đôi.",
+  "Làm ăn phát đạt, khách hàng đông vui.",
+  "May mắn liên hồi, thành công nối tiếp.",
+  "Xuân sang vạn sự như ý.",
+  "Một năm bùng nổ mọi mục tiêu."
+],
+[
+  "Năm mới chill hết nấc, tiền về cực chất.",
+  "Chúc bạn flex nhẹ mà thành công đậm.",
+  "Tết này ví dày, mood luôn high.",
+  "Sự nghiệp lên level, tình yêu full pin.",
+  "2026 bứt tốc, không gì cản nổi.",
+  "Hết deadline, full timeline hạnh phúc.",
+  "Làm ít hưởng nhiều, lộc tới liền tay.",
+  "Năm mới slay, cả năm okay."
+],
+[
+  "Tân xuân khánh hỷ, phúc lộc trùng lai.",
+  "Xuân đáo nhân gian, vạn sự cát tường.",
+  "Niên niên như ý, tuế tuế bình an.",
+  "Tân niên nạp phúc, bách sự thuận thành.",
+  "Xuân phong tống phúc, hỷ khí lâm môn.",
+  "Khai niên đại cát, phú quý trường tồn.",
+  "Xuân nhật an khang, gia hòa hưng thịnh.",
+  "Ngũ phúc lâm môn, tài lộc song toàn."
+]
 ];
 
-let counts=JSON.parse(localStorage.getItem("lixiCounts"))||Array(9).fill(0);
 let selectedIndex=null;
 let userName="";
 let claimed=false;
 
-/* START */
 function start(){
 const name=document.getElementById("username").value.trim();
 if(!name) return alert("Vui lòng nhập tên");
@@ -266,33 +367,21 @@ document.getElementById("chooseScreen").classList.remove("hidden");
 renderGrid();
 }
 
-/* GRID */
 function renderGrid(){
 const grid=document.getElementById("grid");
 grid.innerHTML="";
-let total=counts.reduce((a,b)=>a+b,0);
-
 images.forEach((src,index)=>{
 const div=document.createElement("div");
 div.className="item";
-
 const img=document.createElement("img");
 img.src=src;
 img.className="lixi";
 img.onclick=()=>preview(index);
-
-const percent=document.createElement("div");
-percent.className="percent";
-let p=total?((counts[index]/total)*100).toFixed(1):0;
-percent.innerText=p+"% chọn";
-
 div.appendChild(img);
-div.appendChild(percent);
 grid.appendChild(div);
 });
 }
 
-/* PREVIEW */
 function preview(index){
 selectedIndex=index;
 document.getElementById("overlay").classList.add("show");
@@ -302,7 +391,9 @@ document.getElementById("finalWish").innerText="";
 
 if(claimed){
 document.getElementById("actionArea").innerHTML=
-`<div class="notice">Bạn đã nhận lì xì rồi</div>`;
+`<div class="notice">Bạn đã nhận lì xì rồi</div>
+<button class="primary" onclick="showDownload()">Tải về</button>
+<button class="secondary" onclick="openView()">Xem lì xì</button>`;
 }else{
 document.getElementById("actionArea").innerHTML=
 `<button class="primary" onclick="keepLixi()">Giữ lì xì</button>
@@ -310,35 +401,88 @@ document.getElementById("actionArea").innerHTML=
 }
 }
 
-/* GIỮ */
 function keepLixi(){
 if(claimed) return;
-
+playBell();
 const wish=wishes[selectedIndex][Math.floor(Math.random()*2)];
 document.getElementById("finalWish").innerText=userName+", "+wish;
-
-counts[selectedIndex]++;
-localStorage.setItem("lixiCounts",JSON.stringify(counts));
-
 claimed=true;
 document.getElementById("actionArea").innerHTML=
-`<div class="notice">Bạn đã nhận lì xì rồi</div>`;
-
+`<div class="notice">Bạn đã nhận lì xì rồi</div>
+<button class="primary" onclick="showDownload()">Tải về</button>
+<button class="secondary" onclick="openView()">Xem lì xì</button>`;
 launchFirework();
-renderGrid();
 }
 
-/* ĐỔI */
 function changeLixi(){
 document.getElementById("overlay").classList.remove("show");
 }
 
-/* CLOSE */
 function closeOverlay(e){
 if(e.target.id==="overlay"){
 document.getElementById("overlay").classList.remove("show");
 }
 }
+
+/* DOWNLOAD */
+function showDownload(){
+document.getElementById("downloadConfirm").classList.add("show");
+}
+function closeDownload(){
+document.getElementById("downloadConfirm").classList.remove("show");
+}
+function confirmDownload(){
+let link=document.createElement("a");
+link.href=images[selectedIndex];
+link.download="lixi.png";
+link.click();
+closeDownload();
+}
+
+/* VIEW MODE */
+let scale=1,posX=0,posY=0,isDragging=false,startX,startY;
+function openView(){
+document.getElementById("viewMode").classList.add("show");
+const img=document.getElementById("viewImg");
+img.src=images[selectedIndex];
+scale=1;posX=0;posY=0;
+updateTransform();
+}
+function closeView(){
+document.getElementById("viewMode").classList.remove("show");
+}
+function zoomIn(){scale+=0.2;updateTransform();}
+function zoomOut(){if(scale>0.4){scale-=0.2;updateTransform();}}
+function updateTransform(){
+const img=document.getElementById("viewImg");
+img.style.transform=`translate(${posX}px,${posY}px) scale(${scale})`;
+}
+
+const viewImg=document.getElementById("viewImg");
+viewImg.addEventListener("mousedown",e=>{
+isDragging=true;
+startX=e.clientX-posX;
+startY=e.clientY-posY;
+});
+window.addEventListener("mousemove",e=>{
+if(!isDragging)return;
+posX=e.clientX-startX;
+posY=e.clientY-startY;
+updateTransform();
+});
+window.addEventListener("mouseup",()=>{isDragging=false;});
+viewImg.addEventListener("touchstart",e=>{
+isDragging=true;
+startX=e.touches[0].clientX-posX;
+startY=e.touches[0].clientY-posY;
+});
+viewImg.addEventListener("touchmove",e=>{
+if(!isDragging)return;
+posX=e.touches[0].clientX-startX;
+posY=e.touches[0].clientY-startY;
+updateTransform();
+});
+viewImg.addEventListener("touchend",()=>{isDragging=false;});
 
 /* FIREWORK */
 const canvas=document.getElementById("firework");
@@ -347,12 +491,10 @@ canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
 function launchFirework(){
-
 if(musicOn){
 bgMusic.volume=0.3;
 setTimeout(()=>{bgMusic.volume=1;},1500);
 }
-
 let particles=[];
 for(let i=0;i<100;i++){
 particles.push({
@@ -363,7 +505,6 @@ speed:Math.random()*6+3,
 life:60
 });
 }
-
 function animate(){
 ctx.clearRect(0,0,canvas.width,canvas.height);
 particles.forEach(p=>{
